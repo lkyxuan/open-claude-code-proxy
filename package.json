@@ -4,8 +4,8 @@
   "description": "Local proxy that forwards API requests through the official Claude Code CLI",
   "main": "server.js",
   "bin": {
-    "open-claude-code-proxy": "./server.js",
-    "claude-proxy": "./claude-proxy"
+    "open-claude-code-proxy": "server.js",
+    "claude-local-proxy": "claude-proxy"
   },
   "scripts": {
     "start": "node server.js",
