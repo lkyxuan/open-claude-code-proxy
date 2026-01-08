@@ -19,6 +19,96 @@ function log(message, data = null) {
   fs.appendFileSync(LOG_FILE, logLine + '\n');
 }
 
+// Claude Code → OpenCode 参数名映射（snake_case → camelCase）
+const PARAM_MAPPING = {
+  'file_path': 'filePath',
+  'old_string': 'oldString',
+  'new_string': 'newString',
+  'replace_all': 'replaceAll'
+};
+
+// Claude Code → OpenCode 工具名映射
+const TOOL_NAME_MAPPING = {
+  // 大写 → 小写
+  'Read': 'read',
+  'Write': 'write',
+  'Edit': 'edit',
+  'Bash': 'bash',
+  'Glob': 'glob',
+  'Grep': 'grep',
+  'Task': 'task',
+  'TodoWrite': 'todowrite',
+  // 特殊映射
+  'WebSearch': 'websearch_exa_web_search_exa',
+  'WebFetch': 'webfetch'
+};
+
+// 转换 tool_use 中的工具名和参数名（Claude Code 格式 → OpenCode 格式）
+function convertToolUse(content) {
+  if (!Array.isArray(content)) return content;
+
+  return content.map(block => {
+    if (block.type !== 'tool_use') return block;
+
+    // 转换工具名
+    const convertedName = TOOL_NAME_MAPPING[block.name] || block.name;
+
+    // 转换参数名
+    const convertedInput = {};
+    if (block.input) {
+      for (const [key, value] of Object.entries(block.input)) {
+        const newKey = PARAM_MAPPING[key] || key;
+        convertedInput[newKey] = value;
+      }
+    }
+
+    return { ...block, name: convertedName, input: convertedInput };
+  });
+}
+
+// 清理所有 cache_control - 因为 Claude Code CLI 会加自己的，我们不能再加
+function sanitizeCacheControl(requestData) {
+  let removedCount = 0;
+
+  // 清理 system 中的 cache_control
+  if (Array.isArray(requestData.system)) {
+    for (const block of requestData.system) {
+      if (block.cache_control) {
+        delete block.cache_control;
+        removedCount++;
+      }
+    }
+  }
+
+  // 清理 messages 中的 cache_control
+  if (Array.isArray(requestData.messages)) {
+    for (const message of requestData.messages) {
+      if (Array.isArray(message.content)) {
+        for (const block of message.content) {
+          if (block.cache_control) {
+            delete block.cache_control;
+            removedCount++;
+          }
+        }
+      }
+    }
+  }
+
+  // 清理 tools 中的 cache_control
+  if (Array.isArray(requestData.tools)) {
+    for (const tool of requestData.tools) {
+      if (tool.cache_control) {
+        delete tool.cache_control;
+        removedCount++;
+      }
+    }
+  }
+
+  if (removedCount > 0) {
+    log(`清理了 ${removedCount} 个 cache_control（让 Claude Code 使用自己的缓存策略）`);
+  }
+}
+
 // 启动时清空日志
 fs.writeFileSync(LOG_FILE, `=== Claude Local Proxy 启动于 ${new Date().toISOString()} ===\n`);
 
@@ -59,6 +149,9 @@ const server = http.createServer(async (req, res) => {
                       'anonymous';
 
         const requestData = JSON.parse(body);
+
+        // 清理 cache_control - Anthropic API 最多允许 4 个
+        sanitizeCacheControl(requestData);
 
         // 限制日志大小，保留最近的请求（超过 100KB 截断）
         try {
@@ -110,6 +203,14 @@ const server = http.createServer(async (req, res) => {
                 : '[complex]'
           }))
         });
+        log('7️⃣ Tools', {
+          toolsCount: requestData.tools?.length || 0,
+          toolNames: requestData.tools?.map(t => t.name) || []
+        });
+        // 记录完整的工具定义（用于研究映射）
+        if (requestData.tools && requestData.tools.length > 0) {
+          log('完整 Tools 定义', JSON.stringify(requestData.tools, null, 2));
+        }
         log('其他信息', {
           apiKey: apiKey.substring(0, 20) + '...',
           model: requestData.model,
@@ -145,15 +246,30 @@ async function handleNormalRequest(requestData, res) {
   const messages = requestData.messages || [];
 
   // 构建 prompt：把 messages 数组转成对话格式
-  const prompt = buildPromptFromMessages(messages);
+  let prompt = buildPromptFromMessages(messages);
+
+  // 如果有工具定义，在用户消息前面加上指令（而不是在 system prompt 中）
+  if (requestData.tools && requestData.tools.length > 0) {
+    const toolInstruction = `[PROXY MODE] You are being accessed through a proxy. For this request, use ONLY the following client-defined tools instead of any built-in tools:
+
+${JSON.stringify(requestData.tools, null, 2)}
+
+When you want to use one of these tools, respond with tool_use in your content array. Now here is the user's request:
+
+`;
+    prompt = toolInstruction + prompt;
+  }
 
   return new Promise((resolve, reject) => {
     // 使用 JSON 输出格式，支持 tool_use
-    const claude = spawn('claude', [
+    const args = [
       '--print',
-      '--output-format', 'json',
-      prompt
-    ], {
+      '--output-format', 'json'
+    ];
+
+    args.push(prompt);
+
+    const claude = spawn('claude', args, {
       env: { ...process.env },
       stdio: ['pipe', 'pipe', 'pipe']
     });
@@ -178,12 +294,15 @@ async function handleNormalRequest(requestData, res) {
         // 解析 Claude 的 JSON 输出
         const claudeResponse = JSON.parse(output.trim());
 
+        // 转换 tool_use 参数名（Claude Code → OpenCode 格式）
+        const convertedContent = convertToolUse(claudeResponse.content);
+
         // 构建 Anthropic API 格式的响应
         const response = {
           id: claudeResponse.id || `msg_${Date.now()}`,
           type: 'message',
           role: 'assistant',
-          content: claudeResponse.content || [{ type: 'text', text: output.trim() }],
+          content: convertedContent || [{ type: 'text', text: output.trim() }],
           model: requestData.model || 'claude-sonnet-4-20250514',
           stop_reason: claudeResponse.stop_reason || 'end_turn',
           stop_sequence: claudeResponse.stop_sequence || null,
@@ -233,14 +352,27 @@ async function handleNormalRequest(requestData, res) {
 async function handleStreamRequest(requestData, res) {
   const messages = requestData.messages || [];
 
+  // 如果有工具定义，构建工具指令前缀
+  const toolInstruction = requestData.tools && requestData.tools.length > 0
+    ? `[PROXY MODE] You are being accessed through a proxy. For this request, use ONLY the following client-defined tools instead of any built-in tools:
+
+${JSON.stringify(requestData.tools, null, 2)}
+
+When you want to use one of these tools, respond with tool_use in your content array. Now here is the user's request:
+
+`
+    : '';
+
   // 使用 stream-json 格式与 Claude Code 交互
   return new Promise((resolve, reject) => {
-    const claude = spawn('claude', [
+    const args = [
       '--print',
       '--input-format', 'stream-json',
       '--output-format', 'stream-json',
       '--verbose'
-    ], {
+    ];
+
+    const claude = spawn('claude', args, {
       env: { ...process.env },
       stdio: ['pipe', 'pipe', 'pipe']
     });
@@ -320,6 +452,18 @@ async function handleStreamRequest(requestData, res) {
                   contentBlockIndex++;
                 }
 
+                // 转换工具名（Claude Code → OpenCode 格式）
+                const convertedName = TOOL_NAME_MAPPING[content.name] || content.name;
+
+                // 转换参数名（Claude Code → OpenCode 格式）
+                const convertedInput = {};
+                if (content.input) {
+                  for (const [key, value] of Object.entries(content.input)) {
+                    const newKey = PARAM_MAPPING[key] || key;
+                    convertedInput[newKey] = value;
+                  }
+                }
+
                 // 发送新的 tool_use block 开始
                 sendSSE(res, 'content_block_start', {
                   type: 'content_block_start',
@@ -327,18 +471,18 @@ async function handleStreamRequest(requestData, res) {
                   content_block: {
                     type: 'tool_use',
                     id: content.id,
-                    name: content.name,
+                    name: convertedName,
                     input: {}
                   }
                 });
 
-                // 发送工具输入
+                // 发送工具输入（使用转换后的参数名）
                 sendSSE(res, 'content_block_delta', {
                   type: 'content_block_delta',
                   index: contentBlockIndex,
                   delta: {
                     type: 'input_json_delta',
-                    partial_json: JSON.stringify(content.input)
+                    partial_json: JSON.stringify(convertedInput)
                   }
                 });
 
@@ -381,12 +525,18 @@ async function handleStreamRequest(requestData, res) {
       reject(error);
     });
 
-    // 发送用户消息给 Claude
-    const lastUserMessage = messages.filter(m => m.role === 'user').pop();
-    if (lastUserMessage) {
+    // 构建完整的对话历史作为 prompt（包括 tool_use 和 tool_result）
+    let fullPrompt = buildPromptFromMessages(messages);
+
+    // 在 prompt 前加上工具指令（如果有）
+    if (toolInstruction) {
+      fullPrompt = toolInstruction + fullPrompt;
+    }
+
+    if (fullPrompt) {
       const input = JSON.stringify({
         type: 'user',
-        message: lastUserMessage
+        message: { role: 'user', content: fullPrompt }
       }) + '\n';
 
       claude.stdin.write(input);
@@ -424,7 +574,7 @@ function buildPromptFromMessages(messages) {
   return prompt;
 }
 
-// 获取消息内容（支持 string 和 array 格式）
+// 获取消息内容（支持 string 和 array 格式，包括 tool_use 和 tool_result）
 function getMessageContent(message) {
   if (typeof message.content === 'string') {
     return message.content;
@@ -432,8 +582,20 @@ function getMessageContent(message) {
 
   if (Array.isArray(message.content)) {
     return message.content
-      .filter(c => c.type === 'text')
-      .map(c => c.text)
+      .map(c => {
+        if (c.type === 'text') {
+          return c.text;
+        }
+        if (c.type === 'tool_use') {
+          return `[调用工具 ${c.name}，参数: ${JSON.stringify(c.input)}]`;
+        }
+        if (c.type === 'tool_result') {
+          const content = typeof c.content === 'string' ? c.content : JSON.stringify(c.content);
+          return `[工具 ${c.tool_use_id} 返回: ${content.substring(0, 500)}${content.length > 500 ? '...' : ''}]`;
+        }
+        return '';
+      })
+      .filter(Boolean)
       .join('\n');
   }
 

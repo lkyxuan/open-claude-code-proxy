@@ -33,5 +33,8 @@
   "homepage": "https://github.com/lkyxuan/open-claude-code-proxy#readme",
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.1"
   }
 }
