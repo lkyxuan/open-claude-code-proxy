@@ -1,0 +1,25 @@
+# Logs
+*.log
+proxy.log
+
+# PID files
+*.pid
+.claude-proxy.pid
+
+# Dependencies
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Environment
+.env
+.env.local
+
+# Claude local settings
+.claude/

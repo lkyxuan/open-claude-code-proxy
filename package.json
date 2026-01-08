@@ -1,0 +1,36 @@
+{
+  "name": "open-claude-code-proxy",
+  "version": "1.0.0",
+  "description": "Local proxy that forwards API requests through the official Claude Code CLI",
+  "main": "server.js",
+  "bin": {
+    "open-claude-code-proxy": "./server.js",
+    "claude-proxy": "./claude-proxy"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lkyxuan/open-claude-code-proxy.git"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "anthropic",
+    "proxy",
+    "api",
+    "opencode",
+    "cursor"
+  ],
+  "author": "lkyxuan",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/lkyxuan/open-claude-code-proxy/issues"
+  },
+  "homepage": "https://github.com/lkyxuan/open-claude-code-proxy#readme",
+  "engines": {
+    "node": ">=18"
+  }
+}
