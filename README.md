@@ -39,25 +39,19 @@ Anthropic API
 
 ### Quick Start
 
-#### Option 1: Use npx (Recommended)
-
-```bash
-npx open-claude-code-proxy
-```
-
-#### Option 2: Install globally
+#### Option 1: Install globally (Recommended)
 
 ```bash
 npm install -g open-claude-code-proxy
-claude-proxy start
+claude-local-proxy
 ```
 
-#### Option 3: Clone and run
+#### Option 2: Clone and run
 
 ```bash
 git clone https://github.com/lkyxuan/open-claude-code-proxy.git
 cd open-claude-code-proxy
-./claude-proxy start
+node cli.js
 ```
 
 ### Prerequisites
@@ -182,25 +176,19 @@ Anthropic API
 
 ### 快速开始
 
-#### 方式 1: 使用 npx（推荐）
-
-```bash
-npx open-claude-code-proxy
-```
-
-#### 方式 2: 全局安装
+#### 方式 1: 全局安装（推荐）
 
 ```bash
 npm install -g open-claude-code-proxy
-claude-proxy start
+claude-local-proxy
 ```
 
-#### 方式 3: 克隆运行
+#### 方式 2: 克隆运行
 
 ```bash
 git clone https://github.com/lkyxuan/open-claude-code-proxy.git
 cd open-claude-code-proxy
-./claude-proxy start
+node cli.js
 ```
 
 ### 前置条件
