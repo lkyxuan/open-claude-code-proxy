@@ -6,6 +6,21 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SERVER_JS="$SCRIPT_DIR/server.js"
 PID_FILE="$SCRIPT_DIR/.claude-proxy.pid"
 LOG_FILE="$SCRIPT_DIR/proxy.log"
+CONFIG_FILE="$HOME/.claude-proxy/config.json"
+
+# 从配置文件读取端口
+get_port() {
+    if [ -f "$CONFIG_FILE" ]; then
+        PORT=$(cat "$CONFIG_FILE" | grep -o '"port":[[:space:]]*[0-9]*' | grep -o '[0-9]*')
+        if [ -n "$PORT" ]; then
+            echo "$PORT"
+            return
+        fi
+    fi
+    echo "${PORT:-12346}"
+}
+
+PROXY_PORT=$(get_port)
 
 # 颜色定义
 RED='\033[0;31m'
@@ -115,8 +130,8 @@ start() {
         return 1
     fi
 
-    # 后台启动
-    nohup node "$SERVER_JS" > "$LOG_FILE" 2>&1 &
+    # 后台启动（使用配置的端口）
+    PORT=$PROXY_PORT nohup node "$SERVER_JS" > "$LOG_FILE" 2>&1 &
     PID=$!
     echo $PID > "$PID_FILE"
 
@@ -125,7 +140,7 @@ start() {
 
     if is_running; then
         success "服务已启动 (PID: $PID)"
-        success "监听地址: http://localhost:12346"
+        success "监听地址: http://localhost:$PROXY_PORT"
         echo ""
         info "查看日志: $0 logs"
         info "查看状态: $0 status"
@@ -184,7 +199,7 @@ status() {
         success "服务运行中"
         echo ""
         echo "  PID:      $PID"
-        echo "  地址:     http://localhost:12346"
+        echo "  地址:     http://localhost:$PROXY_PORT"
         echo "  日志:     $LOG_FILE"
         echo ""
 
@@ -240,7 +255,7 @@ Claude Local Proxy 控制脚本
 配置文件:
   客户端配置 (opencode/cursor):
     {
-      "baseURL": "http://localhost:12346",
+      "baseURL": "http://localhost:$PROXY_PORT",
       "apiKey": "sk-any-key-works"
     }
 

@@ -80,6 +80,43 @@ cd open-claude-code-proxy
    source ~/.zshrc
    ```
 
+### Port Configuration
+
+The proxy supports flexible port configuration:
+
+```bash
+# Use command line argument
+claude-local-proxy --port 8080
+claude-local-proxy -p 8080
+
+# Or use environment variable
+PORT=8080 claude-local-proxy
+
+# Or let it use saved config (~/.claude-proxy/config.json)
+claude-local-proxy
+```
+
+**Port Priority**: CLI argument > Config file > Environment variable > Default (12346)
+
+On first run, you'll be prompted to customize the port. Your choice is saved for future use.
+
+### OpenCode Auto-Configuration
+
+The proxy can automatically configure [OpenCode](https://opencode.ai) for you:
+
+- Detects OpenCode config at `~/.config/opencode/opencode.json`
+- Updates `provider.anthropic.options.baseURL` to match your proxy port
+- Creates automatic backups before modifying (keeps last 3)
+- Prompts before making changes (use `--skip-opencode` to skip)
+
+```bash
+# Auto-configure OpenCode
+claude-local-proxy -p 8080
+
+# Skip OpenCode configuration
+claude-local-proxy -p 8080 --skip-opencode
+```
+
 ### Configure Your Client
 
 Point your app to the local proxy:
@@ -92,6 +129,18 @@ Point your app to the local proxy:
 ```
 
 > **Note**: The API key can be any string - authentication is handled by your Claude Code session.
+
+### CLI Options
+
+```
+Usage: claude-local-proxy [options]
+
+Options:
+  -p, --port <port>    Server port (1024-65535)
+  --skip-opencode      Skip OpenCode auto-configuration
+  -h, --help           Show help
+  -v, --version        Show version
+```
 
 ### Commands
 
@@ -174,6 +223,43 @@ cd open-claude-code-proxy
    source ~/.zshrc
    ```
 
+### 端口配置
+
+代理支持灵活的端口配置方式：
+
+```bash
+# 使用命令行参数
+claude-local-proxy --port 8080
+claude-local-proxy -p 8080
+
+# 或使用环境变量
+PORT=8080 claude-local-proxy
+
+# 或使用已保存的配置 (~/.claude-proxy/config.json)
+claude-local-proxy
+```
+
+**端口优先级**：命令行参数 > 配置文件 > 环境变量 > 默认值 (12346)
+
+首次运行时会提示你自定义端口，你的选择会被保存供后续使用。
+
+### OpenCode 自动配置
+
+代理可以自动为 [OpenCode](https://opencode.ai) 配置连接：
+
+- 自动检测 `~/.config/opencode/opencode.json` 配置文件
+- 更新 `provider.anthropic.options.baseURL` 为代理端口
+- 修改前自动备份（保留最近 3 个备份）
+- 修改前会询问确认（使用 `--skip-opencode` 跳过）
+
+```bash
+# 自动配置 OpenCode
+claude-local-proxy -p 8080
+
+# 跳过 OpenCode 配置
+claude-local-proxy -p 8080 --skip-opencode
+```
+
 ### 配置客户端
 
 将你的应用指向本地代理：
@@ -186,6 +272,18 @@ cd open-claude-code-proxy
 ```
 
 > **注意**：API Key 可以是任意字符串，实际认证由 Claude Code 会话处理。
+
+### CLI 选项
+
+```
+用法: claude-local-proxy [选项]
+
+选项:
+  -p, --port <port>    服务器端口 (1024-65535)
+  --skip-opencode      跳过 OpenCode 自动配置
+  -h, --help           显示帮助
+  -v, --version        显示版本
+```
 
 ### 命令说明
 

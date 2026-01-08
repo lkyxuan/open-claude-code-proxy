@@ -23,3 +23,8 @@ Thumbs.db
 
 # Claude local settings
 .claude/
+
+# AI assistant configs
+CLAUDE.md
+AGENTS.md
+openspec/
