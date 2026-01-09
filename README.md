@@ -41,14 +41,31 @@ Anthropic API
 
 ## Quick Start
 
-### Option 1: Install globally (Recommended)
+### Option 1: Let AI install for you (Recommended)
+
+Copy and paste this prompt to your AI assistant (Claude, ChatGPT, etc.):
+
+```
+Help me install and configure open-claude-code-proxy:
+
+1. Install Claude Code CLI globally: npm install -g @anthropic-ai/claude-code
+2. Login to Claude Code: claude auth login
+3. Install the proxy: npm install -g open-claude-code-proxy
+4. Start the proxy: claude-local-proxy
+
+After installation, configure my AI coding tool (like OpenCode, Cursor) to use:
+- baseURL: http://localhost:12346
+- apiKey: any-string-works
+```
+
+### Option 2: Install globally (Manual)
 
 ```bash
 npm install -g open-claude-code-proxy
 claude-local-proxy
 ```
 
-### Option 2: Clone and run
+### Option 3: Clone and run
 
 ```bash
 git clone https://github.com/lkyxuan/open-claude-code-proxy.git

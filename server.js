@@ -6,7 +6,13 @@ const fs = require('fs');
 const path = require('path');
 
 const PORT = process.env.PORT || 12346;
-const LOG_FILE = path.join(__dirname, 'proxy.log');
+const LOG_DIR = path.join(process.env.HOME || process.env.USERPROFILE || '/tmp', '.claude-proxy');
+const LOG_FILE = path.join(LOG_DIR, 'proxy.log');
+
+// 确保日志目录存在
+if (!fs.existsSync(LOG_DIR)) {
+  fs.mkdirSync(LOG_DIR, { recursive: true });
+}
 
 // 日志函数 - 同时输出到控制台和文件
 function log(message, data = null) {
@@ -504,7 +510,7 @@ When you want to use one of these tools, respond with tool_use in your content a
       // 发送结束事件
       sendSSE(res, 'content_block_stop', {
         type: 'content_block_stop',
-        index: 0
+        index: contentBlockIndex
       });
 
       sendSSE(res, 'message_delta', {
