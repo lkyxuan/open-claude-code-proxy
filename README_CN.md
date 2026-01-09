@@ -43,19 +43,10 @@ Anthropic API
 
 ### 方式 1: 让 AI 帮你安装（推荐）
 
-复制以下提示词发送给你的 AI 助手（Claude、ChatGPT 等）：
+在 OpenCode/Cursor/Claude 中粘贴这句话：
 
 ```
-帮我安装和配置 open-claude-code-proxy：
-
-1. 全局安装 Claude Code CLI：npm install -g @anthropic-ai/claude-code
-2. 登录 Claude Code：claude auth login
-3. 安装代理：npm install -g open-claude-code-proxy
-4. 启动代理：claude-local-proxy
-
-安装完成后，配置我的 AI 编程工具（如 OpenCode、Cursor）使用以下设置：
-- baseURL: http://localhost:12346
-- apiKey: 任意字符串
+Install and configure by following the instructions here https://raw.githubusercontent.com/lkyxuan/open-claude-code-proxy/main/INSTALL_GUIDE.md
 ```
 
 ### 方式 2: 全局安装（手动）
