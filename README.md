@@ -11,8 +11,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18-brightgreen?style=flat-square)](https://nodejs.org/)
 
-<img src="https://api.star-history.com/svg?repos=lkyxuan/open-claude-code-proxy&type=Date" alt="Star History Chart" width="600">
-
 </div>
 
 ---
@@ -20,6 +18,14 @@
 ## What is this?
 
 A local proxy server that forwards Anthropic API requests through the **official Claude Code CLI**. This allows you to use Claude in any app that supports the Anthropic API (like [OpenCode](https://opencode.ai), Cursor, etc.) while leveraging your existing Claude Code authentication.
+
+### Features
+
+- **Tool Compatibility**: Automatic tool name mapping (Read→read, WebSearch→websearch_exa_*, etc.)
+- **Parameter Translation**: Converts parameter names (file_path→filePath, old_string→oldString, etc.)
+- **Multi-turn Conversations**: Full conversation history support including tool_use/tool_result
+- **Cache Optimization**: Handles cache_control to avoid conflicts with Claude Code
+- **OpenCode Integration**: Auto-configures OpenCode with backup support
 
 ## How it works
 
@@ -120,10 +126,14 @@ Point your app to the local proxy:
 
 > **Note**: The API key can be any string - authentication is handled by your Claude Code session.
 
-## CLI Options
+## Commands
 
-```
-Usage: claude-local-proxy [options]
+This package provides two commands:
+
+### `claude-local-proxy` - Interactive Mode
+
+```bash
+claude-local-proxy [options]
 
 Options:
   -p, --port <port>    Server port (1024-65535)
@@ -132,7 +142,7 @@ Options:
   -v, --version        Show version
 ```
 
-## Commands
+### `claude-proxy` - Background Mode
 
 | Command | Description |
 |---------|-------------|
@@ -148,6 +158,15 @@ Options:
 - `GET /health` - Health check
 - `POST /v1/messages` - Messages API (Anthropic-compatible)
 
+## FAQ
+
+| Issue | Solution |
+|-------|----------|
+| Login required | Run `claude auth login` to re-authenticate |
+| Connection failed | Check environment variable: `echo $ANTHROPIC_BASE_URL` |
+| Port in use | Use a different port: `claude-local-proxy -p 12347` |
+| Tool name mismatch | Proxy auto-maps tool names (e.g., Read→read) |
+
 ---
 
 <div align="center">
@@ -158,6 +177,6 @@ PRs and issues are welcome!
 
 ### License
 
-[MIT](./LICENSE) © 2025
+[MIT](./LICENSE)
 
 </div>

@@ -11,8 +11,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18-brightgreen?style=flat-square)](https://nodejs.org/)
 
-<img src="https://api.star-history.com/svg?repos=lkyxuan/open-claude-code-proxy&type=Date" alt="Star History Chart" width="600">
-
 </div>
 
 ---
@@ -20,6 +18,14 @@
 ## 这是什么？
 
 一个本地代理服务器，将 Anthropic API 请求通过**官方 Claude Code CLI** 转发。这允许你在任何支持 Anthropic API 的应用（如 [OpenCode](https://opencode.ai)、Cursor 等）中使用 Claude，同时利用现有的 Claude Code 登录会话。
+
+### 功能特性
+
+- **工具兼容**：自动工具名映射（Read→read, WebSearch→websearch_exa_* 等）
+- **参数转换**：自动参数名转换（file_path→filePath, old_string→oldString 等）
+- **多轮对话**：完整对话历史支持，包括 tool_use/tool_result
+- **缓存优化**：处理 cache_control 避免与 Claude Code 冲突
+- **OpenCode 集成**：自动配置 OpenCode，支持备份
 
 ## 工作原理
 
@@ -120,10 +126,14 @@ claude-local-proxy -p 8080 --skip-opencode
 
 > **注意**：API Key 可以是任意字符串，实际认证由 Claude Code 会话处理。
 
-## CLI 选项
+## 命令说明
 
-```
-用法: claude-local-proxy [选项]
+本项目提供两个命令：
+
+### `claude-local-proxy` - 交互模式
+
+```bash
+claude-local-proxy [选项]
 
 选项:
   -p, --port <port>    服务器端口 (1024-65535)
@@ -132,7 +142,7 @@ claude-local-proxy -p 8080 --skip-opencode
   -v, --version        显示版本
 ```
 
-## 命令说明
+### `claude-proxy` - 后台模式
 
 | 命令 | 说明 |
 |------|------|
@@ -154,7 +164,8 @@ claude-local-proxy -p 8080 --skip-opencode
 |------|----------|
 | 提示需要登录 | 运行 `claude auth login` 重新登录 |
 | 连接失败 | 检查环境变量 `echo $ANTHROPIC_BASE_URL` |
-| 端口被占用 | 修改环境变量 `export PORT=12347` |
+| 端口被占用 | 使用其他端口 `claude-local-proxy -p 12347` |
+| 工具名不匹配 | 代理自动映射工具名（如 Read→read） |
 
 ---
 
@@ -166,6 +177,6 @@ claude-local-proxy -p 8080 --skip-opencode
 
 ### 许可证
 
-[MIT](./LICENSE) © 2025
+[MIT](./LICENSE)
 
 </div>
